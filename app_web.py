@@ -70,12 +70,14 @@ if img_file:
         # Mostrar resultado con Estética
         st.write("---")
         # Modifica esta parte para ver el número real en pantalla
-        if result[1] < 95: # Prueba con 95
+        if result[1] < 80: 
             nombre = nombres[result[0]]
-            confianza = round(result[1]) 
-            st.write(f"Detectado: {nombre} (Distancia: {confianza})")
+            st.success(f"### ✅ {nombre} detectado")
         else:
-            st.write("Cerca, pero no lo suficiente (Desconocido)")
+        # Si el celular te da un número alto, mejor que diga "No reconocido" 
+        # a que te cambie el nombre por el de Víctor.
             st.error("### ❌ Persona No Reconocida")
+            st.write("Acerque el celular o mejore la iluminación.")
+
 
 
