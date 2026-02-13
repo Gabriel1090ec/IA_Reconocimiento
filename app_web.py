@@ -1,108 +1,133 @@
 import streamlit as st
 import cv2
 import numpy as np
+import os
 
-# 1. Configuración de la Estética de la Página
+# Configuración de la página
 st.set_page_config(
     page_title="IA Reconocimiento ITSE",
     page_icon="🤖",
     layout="centered"
 )
 
-# Estilo personalizado con Markdown (opcional para colores)
+# Estilos CSS
 st.markdown("""
     <style>
-    .main {
-        background-color: #f0f2f6;
-    }
-    stButton>button {
-        width: 100%;
-        border-radius: 5px;
-        height: 3em;
-        background-color: #007bff;
-        color: white;
+    .stApp {
+        background-color: #f8f9fa;
     }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# 2. Barra Lateral (Sidebar)
+# ══════════════════════════════════════════════════════════════════════════════════════
+# CARGAR ARCHIVOS GENERADOS POR EL ENTRENADOR
+# ══════════════════════════════════════════════════════════════════════════════════════
+
+# Verificar existencia de archivos
+if not os.path.exists('modelo_entrenado.xml'):
+    st.error("❌ Archivo 'modelo_entrenado.xml' no encontrado")
+    st.stop()
+
+if not os.path.exists('etiquetas_personas.npy'):
+    st.error("❌ Archivo 'etiquetas_personas.npy' no encontrado")
+    st.stop()
+
+# Cargar modelo entrenado
+reconocedor = cv2.face.LBPHFaceRecognizer_create()
+reconocedor.read('modelo_entrenado.xml')
+
+# Cargar mapeo de etiquetas (ID -> Nombre)
+mapeo_etiquetas = np.load('etiquetas_personas.npy', allow_pickle=True).item()
+
+# Cargar clasificador Haar Cascade para detección de rostros
+detector = cv2.CascadeClassifier(
+    cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+)
+
+# ══════════════════════════════════════════════════════════════════════════════════════
+# BARRA LATERAL
+# ══════════════════════════════════════════════════════════════════════════════════════
+
 with st.sidebar:
-    st.image("https://www.itse.ac.pa/logo.png", width=150) # Pon un logo si tienes
+    st.image("https://www.itse.ac.pa/logo.png", width=150)
     st.title("Panel de Control")
-    st.info("Este sistema utiliza el algoritmo LBPH para reconocer a los estudiantes del grupo.")
+    st.info("Sistema de reconocimiento facial basado en algoritmo LBPH.")
     st.write("---")
-    st.write("**Integrantes:**")
-    st.write("1- Gabriel Rodriguez (Desarrollador)")
-    st.write("2. Idney Ayala (Desarrollador)")
-    st.write("3. Josue Fajardo (Desarrollador)")
-    st.write("4. Miguel Herrera (Desarrollador)")
-    st.write("4. Kevin Gonzales (Desarrollador)")
+    st.write("**Equipo de Desarrollo:**")
+    st.write("1. Gabriel Rodriguez")
+    st.write("2. Idney Ayala")
+    st.write("3. Josue Fajardo")
+    st.write("4. Miguel Herrera")
+    st.write("5. Kevin Gonzales")
+    
+    st.write("---")
+    st.write("**Estudiantes Registrados:**")
+    for nombre in sorted(mapeo_etiquetas.values()):
+        st.write(f"• {nombre}")
 
-# 3. Cuerpo Principal
-st.title("🤖 Sistema de Visión Artificial")
-st.subheader("Reconocimiento Facial en Tiempo Real")
+# ══════════════════════════════════════════════════════════════════════════════════════
+# CUERPO PRINCIPAL
+# ══════════════════════════════════════════════════════════════════════════════════════
 
-# Cargar Modelo y Cascade
-face_recognizer = cv2.face.LBPHFaceRecognizer_create()
-face_recognizer.read('modelo_entrenado.xml')
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-nombres = ['Daniela', 'Elohim', 'Gabriel', 'Idney', 'Josue', 'Kevin', 'Miguel', 'Patricia', 'Roberto', 'Victor']
+st.title("🤖 Sistema de Reconocimiento Facial")
+st.subheader("Identificación de estudiantes del grupo ITSE")
 
-# Contenedor para la cámara
-with st.container():
-    img_file = st.camera_input("Enfoca tu rostro frente a la cámara")
+# Captura de imagen
+img_file = st.camera_input("Enfoca tu rostro frente a la cámara")
 
 if img_file:
-    bytes_data = img_file.getvalue()
-    cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
-    gray = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
-    
-    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-    
-    if len(faces) == 0:
-        st.warning("No se detectó ningún rostro. Intenta acercarte más.")
-    
-    # Dentro del bucle de rostros en app_web.py
-    # Dentro del bucle de rostros en app_web.py
-    for (x, y, w, h) in faces:
+    with st.spinner("Analizando imagen..."):
+        # Convertir a formato OpenCV
+        bytes_data = img_file.getvalue()
+        cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
+        gray = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
+        
+        # Detección de rostros
+        faces = detector.detectMultiScale(
+            gray,
+            scaleFactor=1.1,
+            minNeighbors=5,
+            minSize=(30, 30)
+        )
+        
+        if len(faces) == 0:
+            st.warning("⚠️ No se detectó ningún rostro. Asegúrate de estar bien iluminado y mirar a la cámara.")
+            st.stop()
+        
+        # Procesar el rostro más grande
+        faces = sorted(faces, key=lambda f: f[2] * f[3], reverse=True)
+        (x, y, w, h) = faces[0]
+        
+        # Extraer y preprocesar rostro
         rostro = gray[y:y+h, x:x+w]
-        rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
+        rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_AREA)
+        rostro = cv2.equalizeHist(rostro)
         
-        # 1. Normalización (basado en tu código de perros/gatos)
-        rostro = cv2.equalizeHist(rostro) 
+        # Predicción usando el modelo entrenado
+        id_predicho, distancia = reconocedor.predict(rostro)
+        confianza = max(0, 100 - distancia)
         
-        # 2. Predicción REAL
-        id_predicho, distancia_raw = face_recognizer.predict(rostro)
-        distancia = round(distancia_raw)
-        
+        # Mostrar resultado
         st.write("---")
-        # ESTA LÍNEA ES PARA TU SEGURIDAD MAÑANA (Puedes borrarla después)
-        st.write(f"🔍 **Dato técnico:** ID_{id_predicho} | Distancia_{distancia}")
         
-        # 3. Lógica de decisión
-        if distancia < 100: 
-            # Validamos que el ID exista en la lista para evitar errores de índice
-            if id_predicho < len(nombres):
-                nombre = nombres[id_predicho]
-                
-                if distancia > 92:
-                    st.warning(f"### ⚠️ {nombre} (Baja precisión)")
-                    st.write(f"Confianza: {100 - distancia}% - Mejore la luz.")
-                else:
-                    st.success(f"### ✅ {nombre} detectado")
-                    st.write(f"Confianza: {100 - distancia}%")
+        if id_predicho in mapeo_etiquetas and distancia < 100:
+            nombre = mapeo_etiquetas[id_predicho]
+            
+            if confianza >= 70:
+                st.success(f"✅ {nombre} detectado")
+                st.write(f"Confianza: {confianza:.0f}%")
+            elif confianza >= 50:
+                st.warning(f"⚠️ {nombre} (Baja precisión)")
+                st.write(f"Confianza: {confianza:.0f}% - Mejore la iluminación")
             else:
-                st.error(f"### ❌ ID {id_predicho} no registrado en la lista")
+                st.warning(f"❓ {nombre} (Confianza muy baja)")
+                st.write(f"Confianza: {confianza:.0f}%")
         else:
-            st.error("### ❌ Persona No Reconocida")
+            st.error("❌ Persona no reconocida")
 
+# ══════════════════════════════════════════════════════════════════════════════════════
+# PIE DE PÁGINA
+# ══════════════════════════════════════════════════════════════════════════════════════
 
-
-
-
-
-
-
-
-
-
+st.markdown("---")
+st.caption("Sistema desarrollado para ITSE • Algoritmo: LBPH Face Recognizer")
