@@ -70,7 +70,7 @@ if img_file:
         # Mostrar resultado con Estética
         st.write("---")
         # Modifica esta parte para ver el número real en pantalla
-        if result[1] < 80: 
+        if result[1] < 90: 
             nombre = nombres[result[0]]
             st.success(f"### ✅ {nombre} detectado")
         else:
@@ -78,6 +78,7 @@ if img_file:
         # a que te cambie el nombre por el de Víctor.
             st.error("### ❌ Persona No Reconocida")
             st.write("Acerque el celular o mejore la iluminación.")
+
 
 
 
