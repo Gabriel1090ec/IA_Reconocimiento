@@ -85,7 +85,7 @@ if img_file:
             if id_predicho < len(nombres):
                 nombre = nombres[id_predicho]
                 
-                if distancia > 85:
+                if distancia > 92:
                     st.warning(f"### ⚠️ {nombre} (Baja precisión)")
                     st.write(f"Confianza: {100 - distancia}% - Mejore la luz.")
                 else:
@@ -95,6 +95,7 @@ if img_file:
                 st.error(f"### ❌ ID {id_predicho} no registrado en la lista")
         else:
             st.error("### ❌ Persona No Reconocida")
+
 
 
 
