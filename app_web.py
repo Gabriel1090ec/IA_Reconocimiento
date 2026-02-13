@@ -69,8 +69,9 @@ if img_file:
         
         # Mostrar resultado con Estética
         st.write("---")
-        if result[1] < 120:
+        if result[1] < 75:
             st.success(f"### ✅ Identificado: {nombres[result[0]]}")
             st.metric("Nivel de Confianza (Distancia)", f"{int(result[1])}")
         else:
+
             st.error("### ❌ Persona No Reconocida")
