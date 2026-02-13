@@ -63,28 +63,36 @@ if img_file:
         st.warning("No se detectó ningún rostro. Intenta acercarte más.")
     
     # Dentro del bucle de rostros en app_web.py
+    # Dentro del bucle de rostros en app_web.py
     for (x, y, w, h) in faces:
         rostro = gray[y:y+h, x:x+w]
         rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
         
+        # 1. Normalización (basado en tu código de perros/gatos)
         rostro = cv2.equalizeHist(rostro) 
         
-        # Realizar la predicción
-        id_predicho, distancia = face_recognizer.predict(rostro)
-        distancia = round(distancia)
+        # 2. Predicción REAL
+        id_predicho, distancia_raw = face_recognizer.predict(rostro)
+        distancia = round(distancia_raw)
         
         st.write("---")
+        # ESTA LÍNEA ES PARA TU SEGURIDAD MAÑANA (Puedes borrarla después)
+        st.write(f"🔍 **Dato técnico:** ID_{id_predicho} | Distancia_{distancia}")
         
+        # 3. Lógica de decisión
         if distancia < 100: 
-            nombre = nombres[id_predicho]
-            
-            # Ajuste de umbrales para el éxito
-            if distancia > 85:
-                st.warning(f"### ⚠️ {nombre} (Baja precisión)")
-                st.write(f"Confianza: {100 - distancia}% - Mejore la luz.")
+            # Validamos que el ID exista en la lista para evitar errores de índice
+            if id_predicho < len(nombres):
+                nombre = nombres[id_predicho]
+                
+                if distancia > 85:
+                    st.warning(f"### ⚠️ {nombre} (Baja precisión)")
+                    st.write(f"Confianza: {100 - distancia}% - Mejore la luz.")
+                else:
+                    st.success(f"### ✅ {nombre} detectado")
+                    st.write(f"Confianza: {100 - distancia}%")
             else:
-                st.success(f"### ✅ {nombre} detectado")
-                st.write(f"Confianza: {100 - distancia}%")
+                st.error(f"### ❌ ID {id_predicho} no registrado en la lista")
         else:
             st.error("### ❌ Persona No Reconocida")
 
