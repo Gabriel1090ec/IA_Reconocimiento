@@ -74,13 +74,14 @@ if img_file:
         
         # Umbral ajustado para celular (pruébalo en 100 para que sea más flexible)
        # Configuración final recomendada para la entrega
-        if distancia < 90: 
+        if distancia < 95: 
             nombre = nombres[id_detectado]
             st.success(f"### ✅ {nombre} detectado")
             st.write(f"Precisión: {100 - distancia}%")
         else:
             st.error("### ❌ Persona No Reconocida")
             st.write("Mejore la iluminación para validar identidad.")
+
 
 
 
