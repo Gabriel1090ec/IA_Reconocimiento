@@ -73,11 +73,11 @@ if img_file:
         st.write("---")
         
         # UMBRAL EQUILIBRADO: 105 es generoso para el celular
-        if distancia < 105: 
+        if distancia < 100: 
             nombre = nombres[result[0]]
             
             # Si la distancia es muy alta (entre 92 y 105), es una zona de duda
-            if distancia > 20:
+            if distancia > 10:
                 st.warning(f"### ⚠️ {nombre} (Baja precisión)")
                 st.write(f"Confianza: {100 - distancia}% - Mejore la luz para confirmar.")
             else:
@@ -85,6 +85,7 @@ if img_file:
                 st.write(f"Confianza: {100 - distancia}%")
         else:
             st.error("### ❌ Persona No Reconocida")
+
 
 
 
