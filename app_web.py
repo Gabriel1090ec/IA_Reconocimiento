@@ -67,17 +67,24 @@ if img_file:
         rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
         result = face_recognizer.predict(rostro)
         
-        # Mostrar resultado con Estética
+        id_detectado = result[0]
+        distancia = round(result[1])
+
         st.write("---")
-        # Modifica esta parte para ver el número real en pantalla
-        if result[1] < 90: 
-            nombre = nombres[result[0]]
-            st.success(f"### ✅ {nombre} detectado")
+        
+        # Umbral ajustado para celular (pruébalo en 100 para que sea más flexible)
+        if distancia < 100: 
+            # Verificamos que el ID no se pase del tamaño de nuestra lista
+            if id_detectado < len(nombres):
+                nombre = nombres[id_detectado]
+                st.success(f"### ✅ {nombre} detectado")
+                st.info(f"**Distancia matemática:** {distancia}")
+            else:
+                st.warning(f"ID {id_detectado} fuera de rango. Revisa la lista de nombres.")
         else:
-        # Si el celular te da un número alto, mejor que diga "No reconocido" 
-        # a que te cambie el nombre por el de Víctor.
             st.error("### ❌ Persona No Reconocida")
-            st.write("Acerque el celular o mejore la iluminación.")
+            st.write(f"Distancia: {distancia}. Acerque el celular o mejore la iluminación.")
+
 
 
 
