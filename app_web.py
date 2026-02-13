@@ -46,7 +46,7 @@ st.subheader("Reconocimiento Facial en Tiempo Real")
 face_recognizer = cv2.face.LBPHFaceRecognizer_create()
 face_recognizer.read('modelo_entrenado.xml')
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-nombres = ['Daniela', 'Elohim', 'Gabriel', 'Idney', 'Kevin', 'Miguel', 'Patricia', 'Roberto', 'Victor']
+nombres = ['Daniela', 'Elohim', 'Gabriel', 'Idney', 'Josue', 'Kevin', 'Miguel', 'Patricia', 'Roberto', 'Victor']
 
 # Contenedor para la cámara
 with st.container():
@@ -95,6 +95,7 @@ if img_file:
                 st.error(f"### ❌ ID {id_predicho} no registrado en la lista")
         else:
             st.error("### ❌ Persona No Reconocida")
+
 
 
 
