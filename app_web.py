@@ -69,10 +69,13 @@ if img_file:
         
         # Mostrar resultado con Estética
         st.write("---")
-        if result[1] < 100:
-            st.success(f"### ✅ Identificado: {nombres[result[0]]}")
-            st.metric("Nivel de Confianza (Distancia)", f"{int(result[1])}")
+        # Modifica esta parte para ver el número real en pantalla
+        if result[1] < 95: # Prueba con 95
+            nombre = nombres[result[0]]
+            confianza = round(result[1]) 
+            st.write(f"Detectado: {nombre} (Distancia: {confianza})")
         else:
-
+            st.write("Cerca, pero no lo suficiente (Desconocido)")
             st.error("### ❌ Persona No Reconocida")
+
 
