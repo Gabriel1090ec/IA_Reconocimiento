@@ -62,24 +62,26 @@ if img_file:
     if len(faces) == 0:
         st.warning("No se detectó ningún rostro. Intenta acercarte más.")
     
+    # Dentro del bucle de rostros en app_web.py
     for (x, y, w, h) in faces:
         rostro = gray[y:y+h, x:x+w]
         rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
-        result = face_recognizer.predict(rostro)
         
-        id_detectado = result[0]
-        distancia = round(result[1])
+        rostro = cv2.equalizeHist(rostro) 
+        
+        # Realizar la predicción
+        id_predicho, distancia = face_recognizer.predict(rostro)
+        distancia = round(distancia)
         
         st.write("---")
         
-        # UMBRAL EQUILIBRADO: 105 es generoso para el celular
         if distancia < 100: 
-            nombre = nombres[result[0]]
+            nombre = nombres[id_predicho]
             
-            # Si la distancia es muy alta (entre 92 y 105), es una zona de duda
-            if distancia > 10:
+            # Ajuste de umbrales para el éxito
+            if distancia > 85:
                 st.warning(f"### ⚠️ {nombre} (Baja precisión)")
-                st.write(f"Confianza: {100 - distancia}% - Mejore la luz para confirmar.")
+                st.write(f"Confianza: {100 - distancia}% - Mejore la luz.")
             else:
                 st.success(f"### ✅ {nombre} detectado")
                 st.write(f"Confianza: {100 - distancia}%")
