@@ -73,17 +73,15 @@ if img_file:
         st.write("---")
         
         # Umbral ajustado para celular (pruébalo en 100 para que sea más flexible)
-        if distancia < 100: 
-            # Verificamos que el ID no se pase del tamaño de nuestra lista
-            if id_detectado < len(nombres):
-                nombre = nombres[id_detectado]
-                st.success(f"### ✅ {nombre} detectado")
-                st.info(f"**Distancia matemática:** {distancia}")
-            else:
-                st.warning(f"ID {id_detectado} fuera de rango. Revisa la lista de nombres.")
+       # Configuración final recomendada para la entrega
+        if distancia < 90: 
+            nombre = nombres[id_detectado]
+            st.success(f"### ✅ {nombre} detectado")
+            st.write(f"Precisión: {100 - distancia}%")
         else:
             st.error("### ❌ Persona No Reconocida")
-            st.write(f"Distancia: {distancia}. Acerque el celular o mejore la iluminación.")
+            st.write("Mejore la iluminación para validar identidad.")
+
 
 
 
