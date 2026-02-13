@@ -42,7 +42,7 @@ detector = cv2.CascadeClassifier(
 
 with st.sidebar:
     try:
-        st.image("https://www.itse.ac.pa/logo.png", width=150)
+        st.image("logo_itse.png", width=150)
     except:
         st.write("ITSE")
     
@@ -147,3 +147,4 @@ if img_file:
 
 # Pie de página
 st.caption("Instituto Tecnológico Superior Especializado (ITSE) • Proyecto de Visión Artificial")
+
