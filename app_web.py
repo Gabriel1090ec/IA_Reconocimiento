@@ -41,10 +41,11 @@ detector = cv2.CascadeClassifier(
 # ══════════════════════════════════════════════════════════════════════════════════════
 
 with st.sidebar:
-    try:
+    # Intentar cargar logo local, si no mostrar texto
+    if os.path.exists("logo_itse.png"):
         st.image("logo_itse.png", width=250)
-    except:
-        st.write("ITSE")
+    else:
+        st.markdown("### 🎓 ITSE")
     
     st.title("Panel de Control")
     
@@ -64,9 +65,9 @@ with st.sidebar:
     for nombre in sorted(mapeo_etiquetas.values()):
         st.write(f"• {nombre}")
 
-# ══════════════════════════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════════════════
 # CUERPO PRINCIPAL - LIMPIO Y LEGIBLE
-# ══════════════════════════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════════════════
 
 st.title("🎓 Reconocimiento Facial ITSE")
 st.markdown("Sistema de identificación biométrica para estudiantes del grupo")
@@ -109,7 +110,7 @@ if img_file:
         (x, y, w, h) = faces[0]
         rostro = gray[y:y+h, x:x+w]
         rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_AREA)
-        rostro = cv2.equalizeHist(rostro)
+        rostro = cv2.equalizeHist(rostro)  # Normalización de iluminación
         
         # Predecir
         id_predicho, distancia = reconocedor.predict(rostro)
@@ -119,7 +120,7 @@ if img_file:
         # Mostrar resultado con componentes nativos de Streamlit
         st.divider()
         
-        if id_predicho in mapeo_etiquetas and distancia < 100:
+        if id_predicho in mapeo_etiquetas and distancia < 75:  # Umbral más estricto
             nombre = mapeo_etiquetas[id_predicho]
             
             if confianza >= 70:
@@ -147,5 +148,3 @@ if img_file:
 
 # Pie de página
 st.caption("Instituto Tecnológico Superior Especializado (ITSE) • Proyecto de Visión Artificial")
-
-
