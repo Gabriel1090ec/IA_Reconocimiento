@@ -123,12 +123,12 @@ if img_file:
         if id_predicho in mapeo_etiquetas and distancia < 75:  # Umbral más estricto
             nombre = mapeo_etiquetas[id_predicho]
             
-            if confianza >= 70:
+            if confianza >= 80:
                 st.success(f"✅ {nombre} detectado")
                 st.write(f"**Confianza:** {confianza:.0f}%")
                 st.write(f"**Hora:** {timestamp}")
             
-            elif confianza >= 50:
+            elif confianza >= 70:
                 st.warning(f"⚠️ {nombre} (baja precisión)")
                 st.write(f"**Confianza:** {confianza:.0f}%")
                 st.write("💡 Recomendación: Mejora la iluminación y vuelve a intentar")
@@ -148,3 +148,4 @@ if img_file:
 
 # Pie de página
 st.caption("Instituto Tecnológico Superior Especializado (ITSE) • Proyecto de Visión Artificial")
+
