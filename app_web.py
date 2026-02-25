@@ -4,9 +4,9 @@ import numpy as np
 import os
 from datetime import datetime
 
-# Configuración
+
 st.set_page_config(
-    page_title="Reconocimiento Facial ITSE ,
+    page_title="Reconocimiento Facial ITSE",
     page_icon="🎓",
     layout="centered"
 )
@@ -149,3 +149,4 @@ if img_file:
 
 
 st.caption("ITSE • Proyecto de Visión Artificial")
+
