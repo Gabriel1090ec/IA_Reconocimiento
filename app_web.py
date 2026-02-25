@@ -6,7 +6,7 @@ from datetime import datetime
 
 # Configuración
 st.set_page_config(
-    page_title="Reconocimiento Facial ITSE - LBPH",
+    page_title="Reconocimiento Facial ITSE ,
     page_icon="🎓",
     layout="centered"
 )
@@ -33,7 +33,7 @@ try:
         threshold=100  # ← UMORAL PERMISIVO
     )
     recognizer.read('modelo_lbph.xml')
-    st.sidebar.success("✅ LBPH cargado")
+    st.sidebar.success("✅ Modelo cargado")
 except Exception as e:
     st.error(f"❌ Error al cargar modelo: {str(e)}")
     st.stop()
@@ -55,7 +55,7 @@ with st.sidebar:
     st.title("Panel de Control")
     
     st.subheader("ℹ️ Sistema")
-    st.write("• Algoritmo: LBPH")
+    st.write("• Algoritmo: Haar Cascade para detección de rostros")
     st.write("• Umbral: 100")
     st.write(f"• Personas: {len(label_map)}")
     st.write("• Resolución: 150×150 px")
@@ -75,7 +75,7 @@ with st.sidebar:
 # CUERPO PRINCIPAL
 # ══════════════════════════════════════════════════════════════════════════════════════
 
-st.title("🎓 Reconocimiento Facial ITSE - LBPH")
+st.title("🎓 Reconocimiento Facial ITSE ")
 st.markdown("Sistema de identificación biométrica")
 
 st.info("""
@@ -146,5 +146,6 @@ if img_file:
             st.write("El rostro no coincide con personas registradas")
         
         st.divider()
+
 
 st.caption("ITSE • Proyecto de Visión Artificial")
