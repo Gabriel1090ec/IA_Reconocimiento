@@ -1,7 +1,5 @@
 streamlit==1.32.0
-tensorflow==2.15.0
+tensorflow-cpu==2.15.0
 opencv-python-headless==4.9.0.80
-streamlit-webrtc==0.47.0
 numpy==1.26.4
-Pillow==10.2.0
-
+scikit-learn==1.4.1
