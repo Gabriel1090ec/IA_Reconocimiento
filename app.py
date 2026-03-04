@@ -1,71 +1,122 @@
 import streamlit as st
-import cv2
-import numpy as np
 import tensorflow as tf
-import json
-import os
+import numpy as np
+from PIL import Image
+import cv2
 
-st.set_page_config(page_title="Reconocimiento Facial ITSE", layout="centered")
+# Configuración de la página
+st.set_page_config(
+    page_title="Reconocimiento Facial - Redes Neuronales",
+    page_icon="🎓",
+    layout="centered"
+)
 
-# Cargar modelo y clases (cacheado para no recargar)
 @st.cache_resource
-def load_model_and_classes():
+def load_model():
+    """Carga el modelo y las etiquetas una sola vez"""
     try:
-        # Cargar modelo H5 directamente
+        # Cargar modelo
         model = tf.keras.models.load_model('mejor_modelo.h5')
+        
+        # Cargar etiquetas desde .npy (formato original del entrenamiento)
+        class_dict = np.load('etiquetas.npy', allow_pickle=True).item()
+        
+        # Invertir diccionario {id: nombre}
+        labels = {v: k for k, v in class_dict.items()}
+        
+        return model, labels
     except Exception as e:
-        st.error(f"❌ Error cargando modelo: {str(e)}")
-        st.stop()
+        st.error(f"Error cargando modelo: {e}")
+        return None, None
+
+def preprocess_image(image):
+    """Preprocesa la imagen para el modelo (640x480 grayscale)"""
+    # Convertir a grayscale
+    if len(image.shape) == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     
-    # Cargar clases desde JSON
-    if os.path.exists('clases.json'):
-        with open('clases.json', 'r') as f:
-            classes = json.load(f)
-        # Convertir claves a enteros para coincidir con las predicciones
-        classes = {int(k): v for k, v in classes.items()}
+    # Redimensionar a 640x480 (width x height)
+    image = cv2.resize(image, (640, 480))
+    
+    # Normalizar
+    image = image / 255.0
+    
+    # Agregar dimensiones de batch y canal: (1, 480, 640, 1)
+    image = np.expand_dims(image, axis=0)
+    image = np.expand_dims(image, axis=-1)
+    
+    return image
+
+def main():
+    st.title("🎓 Reconocimiento Facial - Compañeros")
+    st.write("Sistema de reconocimiento usando Redes Neuronales (TensorFlow)")
+    
+    # Cargar modelo
+    model, labels = load_model()
+    
+    if model is None:
+        st.error("No se pudo cargar el modelo. Verifica que 'mejor_modelo.h5' y 'etiquetas.npy' existan.")
+        return
+    
+    st.success(f"✅ Modelo cargado: {len(labels)} compañeros detectados")
+    
+    # Opciones de entrada
+    option = st.radio("Selecciona método de entrada:", 
+                      ["📷 Usar Cámara", "📁 Subir Imagen"])
+    
+    image_input = None
+    
+    if option == "📷 Usar Cámara":
+        # Captura de cámara
+        camera_image = st.camera_input("Toma una foto")
+        if camera_image is not None:
+            image_input = Image.open(camera_image)
     else:
-        st.error("❌ clases.json no encontrado")
-        st.stop()
+        # Subir archivo
+        uploaded_file = st.file_uploader("Elige una imagen...", type=['jpg', 'jpeg', 'png'])
+        if uploaded_file is not None:
+            image_input = Image.open(uploaded_file)
     
-    return model, classes
-
-model, classes = load_model_and_classes()
-
-st.title("🎓 Reconocimiento Facial ITSE")
-img_file = st.camera_input("Toma una foto")
-
-if img_file:
-    # Leer imagen
-    bytes_data = img_file.getvalue()
-    cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
-    
-    # Convertir a escala de grises
-    gray = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
-    
-    # Preprocesamiento IDÉNTICO al entrenamiento:
-    # 1. Redimensionar a 640x480 (ancho, alto)
-    face_resized = cv2.resize(gray, (640, 480), interpolation=cv2.INTER_AREA)
-    
-    # 2. Normalizar y añadir dimensiones
-    face_array = face_resized.astype('float32') / 255.0
-    face_array = np.expand_dims(face_array, axis=(0, -1))  # Forma: (1, 480, 640, 1)
-    
-    # Verificar forma antes de predecir (para debug)
-    # st.write(f"Forma de entrada: {face_array.shape}")  # Debe ser (1, 480, 640, 1)
-    
-    # Predecir
-    try:
-        pred = model.predict(face_array, verbose=0)
-        idx = int(np.argmax(pred[0]))  # Índice de la clase con mayor probabilidad
+    if image_input is not None:
+        # Mostrar imagen capturada
+        st.image(image_input, caption="Imagen capturada", use_column_width=True)
         
-        # Mostrar SIEMPRE 100% de confianza (requerimiento específico)
-        nombre = classes.get(idx, f"Clase_{idx}")
-        st.success(f"✅ **{nombre}** (Confianza: 100%)")
-        
-        # Mostrar todas las clases disponibles para verificación
-        st.caption("Clases cargadas:")
-        st.json(classes)
-        
-    except Exception as e:
-        st.error(f"❌ Error en predicción: {str(e)}")
-        st.caption("Verifica que mejor_modelo.h5 y clases.json estén en la RAÍZ del repositorio")
+        # Botón para analizar
+        if st.button("🔍 Identificar Persona"):
+            with st.spinner("Analizando..."):
+                try:
+                    # Convertir a array numpy
+                    img_array = np.array(image_input)
+                    
+                    # Preprocesar
+                    processed = preprocess_image(img_array)
+                    
+                    # Predecir
+                    predictions = model.predict(processed, verbose=0)
+                    class_id = np.argmax(predictions[0])
+                    confidence = predictions[0][class_id] * 100
+                    
+                    # Obtener nombre
+                    person_name = labels.get(class_id, "Desconocido")
+                    
+                    # Mostrar resultados
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("👤 Persona", person_name)
+                    with col2:
+                        st.metric("📊 Confianza", f"{confidence:.1f}%")
+                    
+                    # Barra de progreso para confianza
+                    st.progress(int(confidence))
+                    
+                    # Alerta si confianza es baja
+                    if confidence < 60:
+                        st.warning("⚠️ Confianza baja - Acércate más a la cámara o mejora la iluminación")
+                    else:
+                        st.success("✅ Identificación exitosa")
+                        
+                except Exception as e:
+                    st.error(f"Error en la predicción: {e}")
+
+if __name__ == "__main__":
+    main()
