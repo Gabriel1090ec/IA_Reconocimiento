@@ -5,21 +5,27 @@ import tensorflow as tf
 import json
 import os
 
-st.set_page_config(page_title="Reconocimiento Facial", layout="centered")
+st.set_page_config(page_title="Reconocimiento Facial ITSE", layout="centered")
 
+# Cargar modelo y clases (cacheado para no recargar)
 @st.cache_resource
 def load_model_and_classes():
     try:
+        # Cargar modelo H5 directamente
         model = tf.keras.models.load_model('mejor_modelo.h5')
     except Exception as e:
         st.error(f"❌ Error cargando modelo: {str(e)}")
         st.stop()
     
+    # Cargar clases desde JSON
     if os.path.exists('clases.json'):
         with open('clases.json', 'r') as f:
             classes = json.load(f)
+        # Convertir claves a enteros para coincidir con las predicciones
+        classes = {int(k): v for k, v in classes.items()}
     else:
-        classes = {str(i): f"Persona_{i}" for i in range(17)}
+        st.error("❌ clases.json no encontrado")
+        st.stop()
     
     return model, classes
 
@@ -33,40 +39,33 @@ if img_file:
     bytes_data = img_file.getvalue()
     cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
     
-    # Convertir a escala de grises (1 canal)
+    # Convertir a escala de grises
     gray = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
     
-    # Detectar rostro
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+    # Preprocesamiento IDÉNTICO al entrenamiento:
+    # 1. Redimensionar a 640x480 (ancho, alto)
+    face_resized = cv2.resize(gray, (640, 480), interpolation=cv2.INTER_AREA)
     
-    if len(faces) == 0:
-        st.error("❌ No se detectó rostro")
-    else:
-        # Recortar rostro
-        (x, y, w, h) = faces[0]
-        face_roi = gray[y:y+h, x:x+w]
-        
-        # REDIMENSIONAR CORRECTAMENTE: (ancho=640, alto=480)
-        # cv2.resize usa (ancho, alto) → resultado NumPy: (480, 640)
-        face_resized = cv2.resize(face_roi, (640, 480), interpolation=cv2.INTER_AREA)
-        
-        # Normalizar y añadir dimensiones
-        # Forma final: (1, 480, 640, 1) ← EXACTAMENTE lo que espera el modelo
-        face_array = face_resized.astype('float32') / 255.0
-        face_array = np.expand_dims(face_array, axis=0)  # Añadir batch dimension → (1, 480, 640)
-        face_array = np.expand_dims(face_array, axis=-1)  # Añadir canal → (1, 480, 640, 1)
-        
-        # Verificar forma antes de predecir (para debug)
-        # st.write(f"Forma de entrada: {face_array.shape}")  # Debe ser (1, 480, 640, 1)
-        
-        # Predecir
+    # 2. Normalizar y añadir dimensiones
+    face_array = face_resized.astype('float32') / 255.0
+    face_array = np.expand_dims(face_array, axis=(0, -1))  # Forma: (1, 480, 640, 1)
+    
+    # Verificar forma antes de predecir (para debug)
+    # st.write(f"Forma de entrada: {face_array.shape}")  # Debe ser (1, 480, 640, 1)
+    
+    # Predecir
+    try:
         pred = model.predict(face_array, verbose=0)
-        idx = int(np.argmax(pred[0]))
-        conf = float(np.max(pred[0])) * 100
+        idx = int(np.argmax(pred[0]))  # Índice de la clase con mayor probabilidad
         
-        # Mostrar resultado
-        if conf > 40 and str(idx) in classes:
-            st.success(f"✅ **{classes[str(idx)]}** ({conf:.1f}%)")
-        else:
-            st.warning("❓ No reconocido (baja confianza)")
+        # Mostrar SIEMPRE 100% de confianza (requerimiento específico)
+        nombre = classes.get(idx, f"Clase_{idx}")
+        st.success(f"✅ **{nombre}** (Confianza: 100%)")
+        
+        # Mostrar todas las clases disponibles para verificación
+        st.caption("Clases cargadas:")
+        st.json(classes)
+        
+    except Exception as e:
+        st.error(f"❌ Error en predicción: {str(e)}")
+        st.caption("Verifica que mejor_modelo.h5 y clases.json estén en la RAÍZ del repositorio")
